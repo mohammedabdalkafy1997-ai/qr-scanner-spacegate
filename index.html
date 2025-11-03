@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ar">
+<!-- eng ahmed raed 770936309 -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+            direction: rtl !important;
+        }
+
+        video {
+            width: 100%;
+            max-width: 400px;
+            border: 2px solid #000;
+            border-radius: 10px;
+        }
+
+        #result2 {
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h3 style="margin-bottom: 10px;">قم بمسح الـQR Code بالكاميرا</h3>
+    <div style="display: flex; justify-content: center;">
+        <h6 style="margin: 10px 5px;">اختر الكاميرا:</h6>
+        <select id="cameraSelect" style="margin-bottom: 10px;"></select> <!-- Dropdown for camera selection -->
+    </div>
+    <video id="scanner" style="height: 380px; object-fit: cover;"></video>
+    <a id="result2" style="direction: ltr;" href="#"></a>
+    <script type="module">
+        import QrScanner from "./js/qr-scanner.min.js";
+        // const sourcePage = sessionStorage.getItem("sourcePage") || "http://a.com";
+        // console.log(sourcePage);
+        var sourcePage = new URLSearchParams(window.location.search).get("tthh");
+
+
+        if (sourcePage) {
+
+        } else {
+            sourcePage = "http://a.com";
+        }
+        // console.log(sourcePage);
+        const video = document.getElementById('scanner');
+        const resultText = document.getElementById('result2');
+        const qrScanner = new QrScanner(
+            video,
+            result => {
+                var input = result.data;
+                let urlPattern = /login\?username=([^&]+)(?:&password=([^?]+))?(?:\?domain=(.*))?/;
+                let textPattern = /^([^?]+)(?:\?(.*))?$/;
+                var resultt;
+                if (urlPattern.test(input)) {
+                    let matches = input.match(urlPattern);
+                    let username = matches[1];
+                    let password = matches[2] || "";
+                    console.log("Extracted from URL:", { username, password });
+                    result.data = `${sourcePage}/login?username=${username}&password=${password}`;
+                    window.location.href = result.data;
+                } else if (textPattern.test(input)) {
+                    let matches = input.match(textPattern);
+                    let username = matches[1];
+                    let password = matches[2] || "";
+                    console.log("Extracted from Text:", { username, password });
+                    result.data = `${sourcePage}/login?username=${username}&password=${password}`;
+                    window.location.href = result.data;
+                } else {
+                }
+                resultText.innerText = result.data;
+                resultText.href = result.data;
+            },
+
+            {
+                facingMode: 'environment', 
+                highlightScanRegion: true,
+                highlightCodeOutline: true,
+                inversionMode: "both",
+                inversionAttempts: "attemptBoth"
+            },
+        );
+
+
+        let selectedCameraId = null;
+        const cameraSelect = document.getElementById("cameraSelect");
+        cameraSelect.innerHTML = ""; 
+        const cameras = await QrScanner.listCameras(true);
+        cameras.forEach(camera => {
+            const option = document.createElement("option");
+            option.value = camera.id;
+            option.textContent = camera.label;
+            cameraSelect.appendChild(option);
+            if (camera.label.toLowerCase().includes("camera2 0") || camera.label.toLowerCase().includes("back")) {
+                cameraSelect.value = camera.id;
+                qrScanner.setCamera(camera.id);
+            }
+        });
+        cameraSelect.addEventListener("change", event => {
+            selectedCameraId = event.target.value;
+            qrScanner.setCamera(selectedCameraId);
+        });
+
+        qrScanner.start(); 
+
+    </script>
+
+</body>
+
+</html>
+
+
